@@ -2,7 +2,15 @@ module.exports = function(grunt) {
 
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
+
     concat: {
+      options: {
+        separator: ';'
+      },
+      dist: {
+        src: ['public/client/**/*.js'], //find all file to concat
+        dest: 'public/dist/concat.js' //set dir for the concated file
+      }
     },
 
     mochaTest: {
@@ -21,15 +29,21 @@ module.exports = function(grunt) {
     },
 
     uglify: {
+      js: {
+        src: 'public/dist/concat.js',
+        dest: 'public/dist/uglify-concat.js'
+      }
     },
 
     eslint: {
-      target: [
-        // Add list of files to lint here
-      ]
+      target: ['public/dist/uglify-concat.js'] // Add list of files to lint here
     },
 
     cssmin: {
+      dist: {
+        src: 'public/style.css',
+        dest: 'public/dist/style.min.css'
+      }
     },
 
     watch: {
@@ -51,8 +65,9 @@ module.exports = function(grunt) {
 
     shell: {
       prodServer: {
+        command: 'git push live HEAD:master'
       }
-    },
+    }
   });
 
   grunt.loadNpmTasks('grunt-contrib-uglify');
@@ -76,20 +91,24 @@ module.exports = function(grunt) {
     'mochaTest'
   ]);
 
-  grunt.registerTask('build', [
-  ]);
+  grunt.registerTask('build', ['concat','cssmin','uglify','eslint']);
 
-  grunt.registerTask('upload', function(n) {
+  grunt.registerTask('upload', function (n) {
     if (grunt.option('prod')) {
       // add your production server task here
+      //upload files to server
+      grunt.task.run(['shell']);
     } else {
-      grunt.task.run([ 'server-dev' ]);
+      grunt.task.run([ 'server-dev']); //run on local
     }
   });
 
-  grunt.registerTask('deploy', [
-    // add your deploy tasks here
-  ]);
-
+  grunt.registerTask('deploy', function (n) {
+    if (grunt.option('prod')) {
+      grunt.task.run(['build', 'test', 'shell']);
+    } else {
+      grunt.task.run(['build', 'test', 'server-dev']);
+    }
+  });
 
 };
